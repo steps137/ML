@@ -1,4 +1,4 @@
-﻿# The exact solution of the MountainCar problem
+﻿# The exact solution of the MountainCar-v0 problem
 
 
 ## Intro

@@ -1,0 +1,7 @@
+﻿# LunarLander
+
+This is the result of the DQN method. Click on the image to launch.
+
+<center>
+<video src="im/LunarLander.mp4"  poster="im/LunarLander.png"  auto style="width: 600px;" onclick = "this.currentTime = 0; this.play()"></video>
+</center>
