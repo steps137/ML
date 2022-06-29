@@ -1,18 +1,28 @@
 ﻿import os
-from   game import Game
+from   .base import Base, Space
 import numpy as np
 import pygame
 from   collections import deque
 
-class Snake(Game):
-    def __init__(self, dummy = True):
-        self.grid  = [16, 16]
-        self.cell  = [32, 32]
+class Snake(Base):
+    def __init__(self, easy = True, dummy = True, autoplay = True):
+         
+        self.grid   = [16, 16]
+        self.cell   = [8,  8]
+        self.width  = self.grid[0]*self.cell[0]
+        self.height = self.grid[1]*self.cell[1]
+
+        self.observation_space  = Space( (self.width, self.height, 3), 0., 255. )
+        self.action_space       = Space(  5, 0, 4 )
 
         self.color_field = (255, 255, 255)
-        self.color_food  = (  0, 255,   0)
-        self.color_snake = (  0,  0,  255)
+        self.color_food  = (  0, 200,   0)
+        self.color_snake = (  0,  0,  100)
+        self.color_head1 = ( 255, 200,  0)
+        self.color_head2 = ( 200, 0,    0)
 
+        self.autoplay = autoplay
+        self.easy  = easy
         self.dummy = dummy
         if dummy:
             os.environ["SDL_VIDEODRIVER"] = "dummy"
@@ -25,8 +35,7 @@ class Snake(Game):
     def init(self):
         """ Init pygame """
         pygame.init()
-        self.screen = pygame.display.set_mode( ( self.grid[0]*self.cell[0]+1, 
-                                                 self.grid[1]*self.cell[1]+1) )
+        self.screen = pygame.display.set_mode( ( self.width, self.height) )
         self.clock = pygame.time.Clock()        
 
     #------------------------------------------------------------------------------------
@@ -56,10 +65,14 @@ class Snake(Game):
     def reset(self):
         self.gaming = True
         self.tick  = 0
-        self.pos   = np.array([0, self.grid[1] // 2])
-        self.vel   = np.array([1, 0])
+
         self.snake = deque()
-        self.snake.append(self.pos.copy())        
+        self.pos   = np.array([1, self.grid[1] // 2])
+        self.vel   = np.array([1, 0])
+        self.snake.append(self.pos.copy())  
+        if self.easy:
+            self.snake.append(np.array([0, self.grid[1] // 2]))  
+
         self.food  = np.array([0,0])
         self.put_food()
         self.message()
@@ -69,6 +82,8 @@ class Snake(Game):
     #------------------------------------------------------------------------------------
 
     def step(self, a):
+        self.ate = False
+
         if a == 0:
             pass
         elif a== 1: self.key_left()
@@ -79,7 +94,14 @@ class Snake(Game):
         self.gaming = self.logic()
         self.plot()        
         self.tick += 1
-        score = -100*(1-int(self.gaming)) - self.tick + len(self.snake)-1
+
+        if not self.gaming:
+            score = -100
+        elif self.ate:
+            score = 10
+        else:
+            score = 0
+
         return pygame.surfarray.array3d(self.screen), score, 1-self.gaming, {}
 
     #------------------------------------------------------------------------------------
@@ -91,17 +113,21 @@ class Snake(Game):
 
     def plot(self):
             self.screen.fill( self.color_field )
-            pygame.draw.rect(self.screen, (0,0,0), (0, 0, self.grid[0]*self.cell[0], self.grid[1]*self.cell[1] ), 2)
             for i,s in enumerate(self.snake):       
                 color = self.color_snake
-                if not self.gaming and i==0:
-                    color = (255,0,0)
+                if i == 0:
+                    if not self.gaming:
+                        color = self.color_head2
+                    elif self.easy:
+                        color = self.color_head1
+
                 pygame.draw.rect(self.screen,  color, 
                                 [s[0]*self.cell[0]+1, s[1]*self.cell[1]+1 ] 
-                              + [self.cell[0]-1,    self.cell[1]-1]  )
+                              + [self.cell[0]-2,    self.cell[1]-2]  )
+
             pygame.draw.rect(self.screen,  self.color_food, 
                                  [self.food[0]*self.cell[0]+1, self.food[1]*self.cell[1]+1] 
-                               + [self.cell[0]-1,            self.cell[1]-1])                        
+                               + [self.cell[0]-2,            self.cell[1]-2])                        
             pygame.display.update()
 
     #------------------------------------------------------------------------------------
@@ -155,6 +181,7 @@ class Snake(Game):
             return False
 
         if self.equal(self.pos, self.food):
+            self.ate = True
             self.snake.appendleft(self.food.copy())
             self.put_food()
             self.message()            
@@ -188,13 +215,14 @@ class Snake(Game):
             elif event == 'reset':                
                 self.reset()
 
-            self.heuristic()
+            if self.autoplay:
+                self.heuristic()
 
             if self.gaming:
                 self.gaming = self.logic()            
 
             self.plot()
-            self.clock.tick(50)            
+            self.clock.tick(5)            
         pygame.quit()
 
     #------------------------------------------------------------------------------------
@@ -225,8 +253,10 @@ class Snake(Game):
                 elif self.can([ 0,  1]):  self.key_down() 
 
 
-env = Snake(False)
-env.run()
+if __name__ == '__main__':
+    print("Start game")
+    env = Snake(dummy=False, autoplay=False)
+    env.run()
 """
 for _ in range(100):
     s = env.reset()

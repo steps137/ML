@@ -252,4 +252,4 @@ dqn.params = {
 
 dqn.init()
 print(dqn.params)
-dqn.learn(episodes = 3000)
+dqn.learn(episodes = 2000)

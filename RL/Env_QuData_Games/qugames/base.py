@@ -1,6 +1,24 @@
-﻿import pygame
+﻿import numpy as np
+import pygame
 
-class Game:
+class Space:
+    def __init__(self, shape, low, high):        
+        if type(shape) == tuple:
+            self.shape = shape        
+            self.n     = np.prod( shape )
+            self.low   = np.full((shape), low,  dtype=np.float32)
+            self.high  = np.full((shape), high, dtype=np.float32)
+            self.dtype = np.float32
+        else:
+            self.n    = high + 1
+            self.low  = low
+            self.high = high
+
+    def sample(self):
+        return np.random.randint(self.low, self.high+1)
+
+
+class Base:
 
     def reset(self):
         pass
